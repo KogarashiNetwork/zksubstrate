@@ -45,7 +45,7 @@ use sp_core::{
     crypto::{self, Public},
     ecdsa, ed25519,
     hash::{H256, H512},
-    sr25519,
+    redjubjub, sr25519,
 };
 use sp_std::convert::TryFrom;
 use sp_std::prelude::*;
@@ -184,6 +184,8 @@ pub enum MultiSignature {
     Sr25519(sr25519::Signature),
     /// An ECDSA/SECP256k1 signature.
     Ecdsa(ecdsa::Signature),
+    /// An Redjubjub signature.
+    Redjubjub(redjubjub::Signature),
 }
 
 impl From<ed25519::Signature> for MultiSignature {
@@ -237,6 +239,23 @@ impl TryFrom<MultiSignature> for ecdsa::Signature {
     }
 }
 
+impl From<redjubjub::Signature> for MultiSignature {
+    fn from(x: redjubjub::Signature) -> Self {
+        MultiSignature::Redjubjub(x)
+    }
+}
+
+impl TryFrom<MultiSignature> for redjubjub::Signature {
+    type Error = ();
+    fn try_from(m: MultiSignature) -> Result<Self, Self::Error> {
+        if let MultiSignature::Redjubjub(x) = m {
+            Ok(x)
+        } else {
+            Err(())
+        }
+    }
+}
+
 impl Default for MultiSignature {
     fn default() -> Self {
         MultiSignature::Ed25519(Default::default())
@@ -253,6 +272,8 @@ pub enum MultiSigner {
     Sr25519(sr25519::Public),
     /// An SECP256k1/ECDSA identity (actually, the Blake2 hash of the compressed pub key).
     Ecdsa(ecdsa::Public),
+    /// An Redjubjub identity.
+    Redjubjub(redjubjub::Public),
 }
 
 impl Default for MultiSigner {
@@ -275,6 +296,7 @@ impl AsRef<[u8]> for MultiSigner {
             MultiSigner::Ed25519(ref who) => who.as_ref(),
             MultiSigner::Sr25519(ref who) => who.as_ref(),
             MultiSigner::Ecdsa(ref who) => who.as_ref(),
+            MultiSigner::Redjubjub(ref who) => who.as_ref(),
         }
     }
 }
@@ -286,6 +308,7 @@ impl traits::IdentifyAccount for MultiSigner {
             MultiSigner::Ed25519(who) => <[u8; 32]>::from(who).into(),
             MultiSigner::Sr25519(who) => <[u8; 32]>::from(who).into(),
             MultiSigner::Ecdsa(who) => sp_io::hashing::blake2_256(&who.as_ref()[..]).into(),
+            MultiSigner::Redjubjub(who) => <[u8; 32]>::from(who).into(),
         }
     }
 }
@@ -341,6 +364,23 @@ impl TryFrom<MultiSigner> for ecdsa::Public {
     }
 }
 
+impl From<redjubjub::Public> for MultiSigner {
+    fn from(x: redjubjub::Public) -> Self {
+        MultiSigner::Redjubjub(x)
+    }
+}
+
+impl TryFrom<MultiSigner> for redjubjub::Public {
+    type Error = ();
+    fn try_from(m: MultiSigner) -> Result<Self, Self::Error> {
+        if let MultiSigner::Redjubjub(x) = m {
+            Ok(x)
+        } else {
+            Err(())
+        }
+    }
+}
+
 #[cfg(feature = "std")]
 impl std::fmt::Display for MultiSigner {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -348,6 +388,7 @@ impl std::fmt::Display for MultiSigner {
             MultiSigner::Ed25519(ref who) => write!(fmt, "ed25519: {}", who),
             MultiSigner::Sr25519(ref who) => write!(fmt, "sr25519: {}", who),
             MultiSigner::Ecdsa(ref who) => write!(fmt, "ecdsa: {}", who),
+            MultiSigner::Redjubjub(ref who) => write!(fmt, "redjubjub: {}", who),
         }
     }
 }
@@ -371,6 +412,9 @@ impl Verify for MultiSignature {
                     }
                     _ => false,
                 }
+            }
+            (MultiSignature::Redjubjub(ref sig), who) => {
+                sig.verify(msg, &redjubjub::Public::from_slice(who.as_ref()))
             }
         }
     }

@@ -19,7 +19,7 @@
 
 use async_trait::async_trait;
 use parking_lot::RwLock;
-use sp_application_crypto::{ecdsa, ed25519, sr25519, AppKey, AppPair, IsWrappedBy};
+use sp_application_crypto::{ecdsa, ed25519, sr25519, redjubjub, AppKey, AppPair, IsWrappedBy};
 use sp_core::{
     crypto::{CryptoTypePublicPair, ExposeSecret, KeyTypeId, Pair as PairT, Public, SecretString},
     sr25519::{Pair as Sr25519Pair, Public as Sr25519Public},
@@ -107,6 +107,18 @@ impl CryptoStore for LocalKeystore {
         seed: Option<&str>,
     ) -> std::result::Result<ecdsa::Public, TraitError> {
         SyncCryptoStore::ecdsa_generate_new(self, id, seed)
+    }
+
+    async fn redjubjub_public_keys(&self, id: KeyTypeId) -> Vec<redjubjub::Public> {
+        SyncCryptoStore::redjubjub_public_keys(self, id)
+    }
+
+    async fn redjubjub_generate_new(
+        &self,
+        id: KeyTypeId,
+        seed: Option<&str>,
+    ) -> std::result::Result<redjubjub::Public, TraitError> {
+        SyncCryptoStore::redjubjub_generate_new(self, id, seed)
     }
 
     async fn insert_unknown(
@@ -293,6 +305,35 @@ impl SyncCryptoStore for LocalKeystore {
                 .write()
                 .insert_ephemeral_from_seed_by_type::<ecdsa::Pair>(seed, id),
             None => self.0.write().generate_by_type::<ecdsa::Pair>(id),
+        }
+        .map_err(|e| -> TraitError { e.into() })?;
+
+        Ok(pair.public())
+    }
+
+    fn redjubjub_public_keys(&self, key_type: KeyTypeId) -> Vec<redjubjub::Public> {
+        self.0
+            .read()
+            .raw_public_keys(key_type)
+            .map(|v| {
+                v.into_iter()
+                    .map(|k| redjubjub::Public::from_slice(k.as_slice()))
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
+    fn redjubjub_generate_new(
+        &self,
+        id: KeyTypeId,
+        seed: Option<&str>,
+    ) -> std::result::Result<redjubjub::Public, TraitError> {
+        let pair = match seed {
+            Some(seed) => self
+                .0
+                .write()
+                .insert_ephemeral_from_seed_by_type::<redjubjub::Pair>(seed, id),
+            None => self.0.write().generate_by_type::<redjubjub::Pair>(id),
         }
         .map_err(|e| -> TraitError { e.into() })?;
 

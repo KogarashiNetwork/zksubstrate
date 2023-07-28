@@ -91,6 +91,13 @@ impl IdentifyAccount for sp_core::ecdsa::Public {
     }
 }
 
+impl IdentifyAccount for sp_core::redjubjub::Public {
+    type AccountId = Self;
+    fn into_account(self) -> Self {
+        self
+    }
+}
+
 /// Means of signature verification.
 pub trait Verify {
     /// Type of the signer.
@@ -131,6 +138,13 @@ impl Verify for sp_core::ecdsa::Signature {
             Ok(pubkey) => &signer.as_ref()[..] == &pubkey[..],
             _ => false,
         }
+    }
+}
+
+impl Verify for sp_core::redjubjub::Signature {
+    type Signer = sp_core::redjubjub::Public;
+    fn verify<L: Lazy<[u8]>>(&self, mut msg: L, signer: &sp_core::redjubjub::Public) -> bool {
+        sp_io::crypto::redjubjub_verify(self, msg.get(), signer)
     }
 }
 
@@ -1531,12 +1545,26 @@ pub trait BlockIdTo<Block: self::Block> {
 mod tests {
     use super::*;
     use crate::codec::{Decode, Encode, Input};
-    use sp_core::{crypto::Pair, ecdsa};
+    use sp_core::{crypto::Pair, ecdsa, ed25519, redjubjub, sr25519};
 
     mod t {
         use sp_application_crypto::{app_crypto, sr25519};
         use sp_core::crypto::KeyTypeId;
         app_crypto!(sr25519, KeyTypeId(*b"test"));
+    }
+
+    macro_rules! signature_verify_test {
+        ($algorithm:ident) => {
+            let msg = &b"test-message"[..];
+            let wrong_msg = &b"test-msg"[..];
+            let (pair, _) = $algorithm::Pair::generate();
+
+            let signature = pair.sign(&msg);
+            assert!($algorithm::Pair::verify(&signature, msg, &pair.public()));
+
+            assert!(signature.verify(msg, &pair.public()));
+            assert!(!signature.verify(wrong_msg, &pair.public()));
+        };
     }
 
     #[test]
@@ -1613,14 +1641,8 @@ mod tests {
     }
 
     #[test]
-    fn ecdsa_verify_works() {
-        let msg = &b"test-message"[..];
-        let (pair, _) = ecdsa::Pair::generate();
-
-        let signature = pair.sign(&msg);
-        assert!(ecdsa::Pair::verify(&signature, msg, &pair.public()));
-
-        assert!(signature.verify(msg, &pair.public()));
-        assert!(signature.verify(msg, &pair.public()));
+    fn signature_verify_works() {
+        signature_verify_test!(ecdsa);
+        signature_verify_test!(redjubjub);
     }
 }
