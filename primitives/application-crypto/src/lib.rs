@@ -41,6 +41,7 @@ pub use sp_std::{convert::TryFrom, ops::Deref, vec::Vec};
 
 pub mod ecdsa;
 pub mod ed25519;
+pub mod redjubjub;
 pub mod sr25519;
 mod traits;
 
