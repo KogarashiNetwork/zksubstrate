@@ -22,6 +22,6 @@ mod ecdsa;
 #[cfg(test)]
 mod ed25519;
 #[cfg(test)]
-mod sr25519;
-#[cfg(test)]
 mod redjubjub;
+#[cfg(test)]
+mod sr25519;
