@@ -19,7 +19,7 @@
 
 use async_trait::async_trait;
 use parking_lot::RwLock;
-use sp_application_crypto::{ecdsa, ed25519, sr25519, redjubjub, AppKey, AppPair, IsWrappedBy};
+use sp_application_crypto::{ecdsa, ed25519, redjubjub, sr25519, AppKey, AppPair, IsWrappedBy};
 use sp_core::{
     crypto::{CryptoTypePublicPair, ExposeSecret, KeyTypeId, Pair as PairT, Public, SecretString},
     sr25519::{Pair as Sr25519Pair, Public as Sr25519Public},
