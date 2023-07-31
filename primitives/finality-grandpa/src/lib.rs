@@ -39,8 +39,8 @@ use log::debug;
 pub const KEY_TYPE: sp_core::crypto::KeyTypeId = sp_application_crypto::key_types::GRANDPA;
 
 mod app {
-    use sp_application_crypto::{app_crypto, ed25519, key_types::GRANDPA};
-    app_crypto!(ed25519, GRANDPA);
+    use sp_application_crypto::{app_crypto, redjubjub, key_types::GRANDPA};
+    app_crypto!(redjubjub, GRANDPA);
 }
 
 sp_application_crypto::with_pair! {
