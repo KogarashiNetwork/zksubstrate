@@ -61,6 +61,24 @@ pub mod ed25519 {
     pub type AuthorityId = app_ed25519::Public;
 }
 
+pub mod redjubjub {
+    mod app_redjubjub {
+        use sp_application_crypto::{app_crypto, key_types::AURA, redjubjub};
+        app_crypto!(redjubjub, AURA);
+    }
+
+    sp_application_crypto::with_pair! {
+        /// An Aura authority keypair using Redjubjub as its crypto.
+        pub type AuthorityPair = app_redjubjub::Pair;
+    }
+
+    /// An Aura authority signature using Redjubjub as its crypto.
+    pub type AuthoritySignature = app_redjubjub::Signature;
+
+    /// An Aura authority identifier using Redjubjub as its crypto.
+    pub type AuthorityId = app_redjubjub::Public;
+}
+
 pub use sp_consensus_slots::Slot;
 
 /// The `ConsensusEngineId` of AuRa.
