@@ -32,6 +32,8 @@ use std::{
     collections::{HashMap, HashSet},
     sync::Arc,
 };
+#[cfg(feature = "std")]
+use log::info;
 
 /// A keystore implementation usable in tests.
 #[derive(Default)]
@@ -400,6 +402,13 @@ impl SyncCryptoStore for KeyStore {
         msg: &[u8],
     ) -> Result<Vec<u8>, Error> {
         use codec::Encode;
+
+        #[cfg(feature = "std")]
+        info!(
+            "key.0, redjubjub::CRYPTO_ID {:?} {:?}",
+            key.0,
+            redjubjub::CRYPTO_ID
+        );
 
         match key.0 {
             ed25519::CRYPTO_ID => {

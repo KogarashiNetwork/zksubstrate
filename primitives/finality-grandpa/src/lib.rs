@@ -33,13 +33,13 @@ use sp_std::borrow::Cow;
 use sp_std::vec::Vec;
 
 #[cfg(feature = "std")]
-use log::debug;
+use log::{debug, info};
 
 /// Key type for GRANDPA module.
 pub const KEY_TYPE: sp_core::crypto::KeyTypeId = sp_application_crypto::key_types::GRANDPA;
 
 mod app {
-    use sp_application_crypto::{app_crypto, redjubjub, key_types::GRANDPA};
+    use sp_application_crypto::{app_crypto, key_types::GRANDPA, redjubjub};
     app_crypto!(redjubjub, GRANDPA);
 }
 
@@ -393,6 +393,8 @@ where
     use sp_application_crypto::AppKey;
     use sp_core::crypto::Public;
     use sp_std::convert::TryInto;
+
+    info!("AuthorityId::ID {:?}", AuthorityId::ID);
 
     let encoded = localized_payload(round, set_id, &message);
     let signature = SyncCryptoStore::sign_with(
