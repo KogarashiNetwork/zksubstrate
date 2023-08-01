@@ -394,7 +394,7 @@ where
     use sp_core::crypto::Public;
     use sp_std::convert::TryInto;
 
-    info!("AuthorityId::ID {:?}", AuthorityId::ID);
+    info!("key.0 AuthorityId::ID {:?} {:?}", public.to_public_crypto_pair().0, AuthorityId::ID);
 
     let encoded = localized_payload(round, set_id, &message);
     let signature = SyncCryptoStore::sign_with(
