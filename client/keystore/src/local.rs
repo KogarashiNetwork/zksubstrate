@@ -167,7 +167,8 @@ impl SyncCryptoStore for LocalKeystore {
         Ok(raw_keys.into_iter().fold(Vec::new(), |mut v, k| {
             v.push(CryptoTypePublicPair(sr25519::CRYPTO_ID, k.clone()));
             v.push(CryptoTypePublicPair(ed25519::CRYPTO_ID, k.clone()));
-            v.push(CryptoTypePublicPair(ecdsa::CRYPTO_ID, k));
+            v.push(CryptoTypePublicPair(ecdsa::CRYPTO_ID, k.clone()));
+            v.push(CryptoTypePublicPair(redjubjub::CRYPTO_ID, k));
             v
         }))
     }
@@ -217,6 +218,15 @@ impl SyncCryptoStore for LocalKeystore {
                     .0
                     .read()
                     .key_pair_by_type::<ecdsa::Pair>(&pub_key, id)
+                    .map_err(|e| TraitError::from(e))?;
+                Ok(key_pair.sign(msg).encode())
+            }
+            redjubjub::CRYPTO_ID => {
+                let pub_key = redjubjub::Public::from_slice(key.1.as_slice());
+                let key_pair: redjubjub::Pair = self
+                    .0
+                    .read()
+                    .key_pair_by_type::<redjubjub::Pair>(&pub_key, id)
                     .map_err(|e| TraitError::from(e))?;
                 Ok(key_pair.sign(msg).encode())
             }
