@@ -26,7 +26,7 @@ use std::convert::TryFrom;
 use substrate_bip39::mini_secret_from_entropy;
 
 #[cfg(feature = "full_crypto")]
-use red_jubjub::{kogarashi_hash, Keypair, PublicKey, SecretKey};
+use red_jubjub::{Keypair, PublicKey, SecretKey};
 #[cfg(feature = "full_crypto")]
 use zkstd::behave::SigUtils;
 
@@ -443,7 +443,7 @@ impl TraitPair for Pair {
     ///
     /// You should never need to use this; generate(), generate_with_phrase
     fn from_seed_slice(seed_slice: &[u8]) -> Result<Pair, SecretStringError> {
-        let secret = SecretKey::new(kogarashi_hash(seed_slice));
+        let secret = SecretKey::from_seed_bytes(seed_slice).unwrap();
         Ok(Self(Keypair::new(secret)))
     }
 
@@ -503,7 +503,7 @@ impl TraitPair for Pair {
 
     /// Return a vec filled with raw data.
     fn to_raw_vec(&self) -> Vec<u8> {
-        self.0.secret.to_bytes().to_vec()
+        self.seed().to_vec()
     }
 }
 
@@ -534,7 +534,7 @@ impl Pair {
             .expect("32 bytes can always build a key; qed")
             .to_bytes();
 
-        let secret = SecretKey::new(kogarashi_hash(&seed));
+        let secret = SecretKey::from_seed_bytes(&seed).unwrap();
         (Self(Keypair::new(secret)), secret.to_bytes())
     }
 
@@ -715,5 +715,12 @@ mod tests {
         assert!(deserialize_signature("\"Not an actual signature.\"").is_err());
         // Poorly-sized
         assert!(deserialize_signature("\"abc123\"").is_err());
+    }
+
+    #[test]
+    fn entropy_seed_recover_works() {
+        let (pair, seed) = Pair::from_entropy(b"abcdefghijklmnopqrstuvwx", None);
+        let pair_prime = Pair::from_seed(&seed);
+        assert_eq!(pair.public(), pair_prime.public());
     }
 }

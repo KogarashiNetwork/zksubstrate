@@ -65,6 +65,7 @@ pub mod hash;
 #[cfg(feature = "std")]
 mod hasher;
 pub mod offchain;
+#[allow(missing_docs)]
 pub mod redjubjub;
 pub mod sandbox;
 pub mod sr25519;
